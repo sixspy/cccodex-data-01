@@ -28,8 +28,19 @@ code { font-size: 0.85em; }
 .tag.done { background: #1e4d3a; color: #9fe0c0; }
 .tag.draft { background: #3a4556; }
 .tag.failed { background: #5a2a2a; color: #ffb3b3; }
+.tag.partial { background: #5a4a1e; color: #ffd97a; }
+.tag.running { background: #1e3a5a; color: #9fc8ff; }
+.tag.mode { background: #33305a; color: #c5c0ff; }
 .flash { list-style: none; padding: 0 1.25rem; }
 .flash .ok { color: var(--ok); }
 .flash .error { color: var(--err); }
+.flash .warn { color: #ffd97a; }
+button:disabled { background: #3a4556; border-color: #3a4556; cursor: not-allowed; color: var(--muted); }
+.block-reason { margin-left: 0.5rem; }
+.partial-hint { color: #ffd97a; }
+details.run { border: 1px solid #2a3545; border-radius: 6px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; }
+details.run summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+details.run .run-detail { margin-top: 0.6rem; border-top: 1px dashed #2a3545; padding-top: 0.6rem; }
+pre.fail-summary { background: #0f1419; border: 1px solid #5a2a2a; border-radius: 4px; padding: 0.6rem; white-space: pre-wrap; color: #ffb3b3; }
 .grid-form { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr auto; align-items: end; }
 @media (max-width: 720px) { .grid-form { grid-template-columns: 1fr; } }

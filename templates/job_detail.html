@@ -4,28 +4,80 @@
 <p><a href="{{ url_for('jobs.list_jobs') }}">← 返回列表</a></p>
 <section class="card">
   <h1>{{ job.name }}</h1>
-  <p>种子 <code>{{ job.seed_path }}</code> · 状态 <span class="tag {{ job.status }}">{{ job.status }}</span></p>
-  {% if job.status == 'draft' %}
-  <form method="post" action="{{ url_for('jobs.run_job_view', job_id=job.id) }}">
-    <button type="submit">运行采集（同步）</button>
-  </form>
-  {% elif job.status == 'done' %}
-  <p class="muted">已完成于 {{ job.finished_at or '—' }}</p>
+  <p>
+    种子 <code>{{ job.seed_path }}</code> ·
+    方式 <span class="tag mode">{{ mode_labels[job.mode] }}</span> ·
+    状态 <span class="tag {{ job.status }}">{{ status_labels[job.status] }}</span> ·
+    已知最大修订序号 <strong>{{ job.known_rev if job.known_rev is not none else '—' }}</strong>
+  </p>
+  {% if job.status == 'partial' %}
+  <p class="partial-hint">最近一次运行存在失败条目，任务为部分成功（非全胜），请展开下方运行记录查看失败摘要。</p>
   {% endif %}
+  {% if can_run %}
+  <form method="post" action="{{ url_for('jobs.run_job_view', job_id=job.id) }}">
+    <button type="submit">运行采集（{{ mode_labels[job.mode] }}，同步）</button>
+  </form>
+  {% else %}
+  <p>
+    <button type="button" disabled>运行采集（{{ mode_labels[job.mode] }}）</button>
+    <span class="muted block-reason">{{ block_reason }}</span>
+  </p>
+  {% endif %}
+  {% if job.mode == 'backfill' and last_seed_run %}
+  <p class="muted">该种子上一次运行：#{{ last_seed_run.id }}（{{ status_labels[last_seed_run.status] }}，
+    修订止 {{ last_seed_run.rev_end }}）——补采将只处理其跳过清单，并携带已知最大修订序号。</p>
+  {% endif %}
+</section>
+<section class="card">
+  <h2>运行记录（按时间倒序）</h2>
+  {% for run in runs %}
+  <details class="run">
+    <summary>
+      <strong>#{{ run.id }}</strong>
+      <span class="tag mode">{{ mode_labels[run.mode] }}</span>
+      修订 {{ run.rev_start }} → {{ run.rev_end }} ·
+      新写入 {{ run.inserted }} · 跳过 {{ run.skipped }} · 失败 {{ run.failed }}
+      <span class="tag {{ run.status }}">{{ status_labels[run.status] }}</span>
+      <span class="muted">{{ run.started_at }}</span>
+    </summary>
+    <div class="run-detail">
+      <p class="muted">开始 {{ run.started_at }} · 完成 {{ run.finished_at or '—' }}</p>
+      {% if run.fail_summary %}
+      <p><strong>失败摘要</strong></p>
+      <pre class="fail-summary">{{ run.fail_summary }}</pre>
+      {% endif %}
+      {% set run_skips = skips.get(run.id, []) %}
+      {% if run_skips %}
+      <p><strong>跳过编码（{{ run_skips|length }}）</strong></p>
+      <ul>
+        {% for s in run_skips %}
+        <li><code>{{ s.item_code }}</code> — {{ s.reason }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if not run.fail_summary and not run_skips %}
+      <p class="muted">无失败、无跳过。</p>
+      {% endif %}
+    </div>
+  </details>
+  {% else %}
+  <p class="muted">尚无运行记录</p>
+  {% endfor %}
 </section>
 <section class="card">
   <h2>落库记录</h2>
   <table>
-    <thead><tr><th>item_key</th><th>标题</th><th>时间</th></tr></thead>
+    <thead><tr><th>item_key</th><th>编码</th><th>标题</th><th>时间</th></tr></thead>
     <tbody>
       {% for r in records %}
       <tr>
         <td><code>{{ r.item_key }}</code></td>
+        <td><code>{{ r.item_code }}</code></td>
         <td>{{ r.title }}</td>
         <td>{{ r.fetched_at }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="3" class="muted">尚无记录</td></tr>
+      <tr><td colspan="4" class="muted">尚无记录</td></tr>
       {% endfor %}
     </tbody>
   </table>
